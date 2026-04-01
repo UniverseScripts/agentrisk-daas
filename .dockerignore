@@ -1,0 +1,9 @@
+.venv
+github_velocity_test_output.json
+guidelines.md
+instructions.md
+README.md
+.gitignore
+.dockerignore
+__pycache__/
+.github

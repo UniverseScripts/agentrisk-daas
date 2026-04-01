@@ -15,7 +15,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# alembic 
 # Ignore the generated sqlite db if any
 *.db
 
@@ -24,3 +23,6 @@ venv.bak/
 .idea/
 *.swp
 *.swo
+
+#Custom
+github_velocity_test_output.json
