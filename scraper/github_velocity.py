@@ -4,7 +4,7 @@ import httpx
 from datetime import datetime, timedelta, timezone
 import json
 
-from db.connection import AsyncSessionLocal, engine
+from db.connection import AsyncSessionLocal
 from sqlalchemy.dialects.postgresql import insert
 import db.models
 

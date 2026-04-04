@@ -24,7 +24,7 @@ jobs:
             
             - name: Running The Scrapper
               env:
-                    GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-                    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
               run: |
-                  python -m scraper/github_velocity.py
+                  python scraper/github_velocity.py

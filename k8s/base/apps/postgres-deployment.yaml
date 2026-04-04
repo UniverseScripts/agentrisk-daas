@@ -37,17 +37,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: daas-secrets
-                  key: daas_admin
+                  key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: daas-secrets
-                  key: daas_admin_password
+                  key: POSTGRES_PASSWORD
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
                   name: daas-secrets
-                  key: daas_db
+                  key: POSTGRES_DB
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
