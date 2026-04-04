@@ -1,7 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from sqlalchemy import select, update
 import uvicorn
-
+import os
+import hmac
+import hashlib
+import uuid
 from db.connection import AsyncSessionLocal
 from db.models import APIKey, RepositoryMetric
 from api.schemas import RepositoryMetricResponse
@@ -13,6 +16,81 @@ app = FastAPI(
     description="Stateless Routing Matrix - AI Developer Velocity API",
     version="1.0"
 )
+
+LEMON_SQUEEZY_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZY_WEBHOOK_SECRET")
+
+@app.post("/webhooks/lemon-squeezy")
+async def lemon_squeezy_webhook(request: Request):
+    """
+    Cryptographic Webhook Receiver for Lemon Squeezy MoR.
+    Strictly verifies HMAC signatures to allocate 10000 limit API tokens securely.
+    """
+    if not LEMON_SQUEEZY_WEBHOOK_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="CRITICAL: LEMON_SQUEEZY_WEBHOOK_SECRET environment variable missing"
+        )
+        
+    x_signature = request.headers.get("X-Signature")
+    if not x_signature:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing signature headers")
+        
+    # Read raw body strictly for HMAC calculation without parsing JSON
+    raw_body = await request.body()
+    
+    # Compute HMAC SHA-256 Digest mathematically
+    digest = hmac.new(
+        LEMON_SQUEEZY_WEBHOOK_SECRET.encode("utf-8"), 
+        raw_body, 
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Secure constant-time comparison to prevent timing attacks
+    if not hmac.compare_digest(digest, x_signature):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Signature authentication forgery detected")
+        
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unparsable JSON transmission")
+        
+    # Isolate relevant payload keys
+    meta = payload.get("meta", {})
+    if meta.get("event_name") != "order_created":
+        return {"status": "Event ignored properly"}
+        
+    data = payload.get("data", {})
+    attributes = data.get("attributes", {})
+    user_email = attributes.get("user_email")
+    
+    if not user_email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing user_email payload structure")
+    
+    # Cryptographic API String generation
+    raw_api_key = f"daas_live_{uuid.uuid4().hex}"
+    
+    # Non-reversible SHA-256 standard encryption for the ledger
+    hashed_api_key = hashlib.sha256(raw_api_key.encode("utf-8")).hexdigest()
+    
+    # Atomic Asynchronous Ledger Injection
+    async with AsyncSessionLocal() as session:
+        new_api_key = APIKey(
+            valid_api_keys=hashed_api_key,
+            token_balance=10000,
+            is_active=True
+        )
+        session.add(new_api_key)
+        await session.commit()
+        
+    # Output stub exactly as required
+    print(f"Provisioned key for {user_email}. Raw Key: {raw_api_key}")
+    # TODO: Async dispatch raw_api_key to client_email
+    
+    return {"status": "success", "provisioned": True}
+
+@app.get("/", description="Check the application's health")
+async def GetHealth():
+    return {"status": "online"}
 
 @app.get("/api/v1/ai-developer-velocity/{repo_name:path}", response_model=RepositoryMetricResponse)
 async def get_developer_velocity(
@@ -71,4 +149,4 @@ async def get_developer_velocity(
         return metric_node
 
 if __name__ == "__main__":
-    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, env_file=".env", reload=True)

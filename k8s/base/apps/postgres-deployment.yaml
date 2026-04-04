@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: daas-production
+spec:
+  selector:
+    app: postgres-ledger
+  ports:
+    - port: 5432
+  clusterIP: None
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-deployment
+  namespace: daas-production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-ledger
+  template:
+    metadata:
+      labels:
+        app: postgres-ledger
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: daas-secrets
+                  key: daas_admin
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: daas-secrets
+                  key: daas_admin_password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: daas-secrets
+                  key: daas_db
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumeClaimTemplates:
+        - metadata:
+            name: postgres-storage
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 5Gi

@@ -1,45 +1,38 @@
-# Antigravity Agent Directives: Project DaaS (AI Developer Velocity API)
+# Antigravity Agent Directives: Phase 3 - Autonomous Financial Perimeter
 
 ## 0. The Architectural Objective
-You are engineering a strictly decoupled Data-as-a-Service (DaaS) pipeline. This architecture operates on consumer edge silicon orchestrated via K3s. You will not build a monolithic application. You will engineer three mathematically isolated components:
-1. An asynchronous Python ingestion engine (executed ephemerally via GitHub Actions).
-2. A normalized PostgreSQL data ledger.
-3. A stateless FastAPI routing matrix protected by Redis atomic rate limiters and authenticated via static `X-API-Key` headers.
+The Data-as-a-Service (DaaS) ingestion and routing pipelines are operational. You must now engineer the financial monetization bridge. You will implement a highly secure webhook receiver that mathematically links the Lemon Squeezy Merchant of Record (MoR) to the PostgreSQL `api_key` ledger, and configure the Kubernetes ingress routing to expose this perimeter to the global internet.
 
-## 1. The PostgreSQL Ledger (State Matrix)
-**Thesis:** Standard agents create unindexed, flattened tables.
-**Anti-Thesis:** Unindexed querying of time-series alternative data will stall the ASGI event loop during concurrent B2B API requests.
-**Synthesis:** Enforce strict normalization and B-Tree indexing on temporal and repository identifiers.
+## 1. The Cryptographic Webhook Receiver (Application Layer)
+**Thesis:** Standard agents blindly trust incoming HTTP payloads, leading to API key generation forgery by malicious actors.
+**Anti-Thesis:** Relying purely on network-layer security (IP whitelisting) is insufficient for financial transactions on edge nodes.
+**Synthesis:** Enforce strict HMAC SHA-256 signature verification on the incoming payload before allocating any database resources.
 
-Execute the following database schemas utilizing SQLAlchemy 2.0 (`asyncpg`):
-1. Create a `repository_metrics` table. Columns: `id` (UUID, Primary Key), `repo_name` (String, Indexed), `timestamp` (DateTime, Indexed), `commit_velocity_24h` (Integer), `open_issues_delta` (Integer), `fork_velocity_24h` (Integer), `contributor_churn` (Float).
-2. Create an `api_key` table. Columns: `id` (String, PK), `valid_api_keys` (String, Unique, Indexed), `token_balance` (Integer), `is_active` (Boolean).
+You must mutate `api/main.py` to include the following endpoint: `POST /webhooks/lemon-squeezy`.
+Execute the following strict logic:
+1. **Air-gapped Secret:** Extract `LEMON_SQUEEZY_WEBHOOK_SECRET` via `os.getenv()`. Fail violently if missing.
+2. **Signature Verification:** Extract the `X-Signature` HTTP header. Compute the HMAC SHA-256 digest of the raw request body using the air-gapped secret. You MUST use `hmac.compare_digest()` to prevent timing attacks. If the signature is forged, immediately raise `HTTP 401`.
+3. **Event Parsing:** Parse the JSON payload. Ensure the `meta.event_name` equals `order_created`.
+4. **Cryptographic Key Generation:** Generate a raw API key string (e.g., `daas_live_<uuid4>`). You MUST mathematically hash this raw string using SHA-256 before interacting with the database.
+5. **Ledger Injection:** Asynchronously insert a new `APIKey` record into the database. Set `valid_api_keys` to the hashed string, `token_balance` to `10000`, and `is_active` to `True`. 
+6. **Output Stub:** Print or log the raw API key and the client's email (extracted from `data.attributes.user_email`). Do not build a complex SMTP integration yet; leave a clear `# TODO: Async dispatch raw_api_key to client_email` marker.
 
-## 2. The Ingestion Engine (GitHub Actions Scraper)
-**Thesis:** Standard agents build continuous `while True:` polling loops utilizing heavy web scraping frameworks like Selenium.
-**Anti-Thesis:** Persistent polling will consume the local CPU baseline, triggering thermal throttling and bankrupting the compute limits.
-**Synthesis:** Engineer an ephemeral, stateless Python script designed to run exclusively via GitHub Actions cron schedules.
+## 2. The Kubernetes Ingress Routing (Infrastructure Layer)
+**Thesis:** Hardcoding ports and relying on default NodePorts exposes the edge cluster to direct, unmitigated DDoS vectors.
+**Anti-Thesis:** Complex service meshes (Istio) will consume the remaining memory baseline of the consumer-grade hardware.
+**Synthesis:** Engineer a strict, lightweight Traefik IngressRoute utilizing your existing Cloudflare Tunnel perimeter.
 
-Execute the ingestion logic:
-1. Engineer `scraper/github_velocity.py`.
-2. Utilize the native GitHub GraphQL API (to minimize payload overhead) via the `httpx` asynchronous library.
-3. Target the top 50 AI/ML repositories (e.g., `pytorch/pytorch`, `huggingface/transformers`, `langchain-ai/langchain`).
-4. Calculate the 24-hour delta for commits, forks, and closed issues.
-5. The script must establish an asynchronous connection to the PostgreSQL remote tunnel, execute a bulk `INSERT` operation, and immediately terminate to release compute resources.
+You must create a new file: `k8s/base/routing/daas-ingress.yaml`.
+Execute the following declarative infrastructure:
+1. Define a standard Kubernetes `Ingress` resource targeting the `traefik` ingress class.
+2. Map the host (e.g., `api.yourdomain.com`) strictly to the backend `fastapi-service` on port `8000`.
+3. You must explicitly define two paths:
+    * Path: `/api/v1/ai-developer-velocity` (Prefix match)
+    * Path: `/webhooks/lemon-squeezy` (Exact match)
 
-## 3. The Stateless Routing Matrix (FastAPI)
-**Thesis:** Standard agents intertwine authentication, database querying, and rate-limiting within the endpoint function.
-**Anti-Thesis:** Monolithic endpoints violate single-responsibility principles and create severe bottleneck vulnerabilities under Locust load testing.
-**Synthesis:** Engineer strict middleware perimeters. The endpoint must only execute when the request is mathematically proven to be authorized and within quota constraints.
+## 3. The Execution Protocol
+* **Do not** modify the existing Lua rate limiter or the `get_developer_velocity` endpoint.
+* **Do not** alter `db/models.py`. The `APIKey` schema is already absolute.
+* Ensure all database operations in the webhook remain fully asynchronous to prevent blocking the ASGI event loop during a surge of MoR transactions.
 
-Execute the routing logic:
-1. Define the primary endpoint: `GET /api/v1/ai-developer-velocity/{repo_name}`.
-2. **The Authentication Perimeter:** Inject a FastAPI `Depends` function (`verify_api_key`) that strictly scans for the `X-API-Key` HTTP header. It must query the `api_key` table via `asyncpg`. If `token_balance <= 0` or the key is invalid, terminate the socket immediately with `HTTP 401` or `HTTP 402`.
-3. **The Redis Rate Limiter:** Engineer an asynchronous Lua script injected into a Redis client within a FastAPI middleware layer. It must execute a sliding-window token bucket algorithm based on the client's API key. Reject overflow traffic with `HTTP 429`.
-4. **The Ledger Deduction:** Upon successful retrieval of the PostgreSQL data, mathematically deduct 1 token from the `api_key.token_balance` and execute `db.commit()`.
-5. Return the payload strictly serialized via Pydantic models.
-
-## 4. The Execution Protocol
-Do not hallucinate external dependencies. Do not import Heavy ML libraries (e.g., `torch`, `transformers`). This is a structured data pipeline, not an inference node. 
-
-Iteratively execute the code generation for each section. Stop and request human verification before mutating the K3s deployment manifests.
+Iteratively draft the `api/main.py` mutation and present it for human verification before drafting the Kubernetes YAML.

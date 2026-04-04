@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deployment
+  namespace: daas-production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fastapi-core
+  template:
+    metadata:
+      labels:
+        app: fastapi-core
+    spec:
+      containers:
+        - name: fastapi-server
+          image: daas-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: daas-secrets
+                  key: postgresql+asyncpg://daas_admin:[EMAIL_ADDRESS]:5432/daas_db
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: daas-secrets
+                  key: redis://redis-service:6379
+            - name: LEMON_SQUEEZY_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: daas-secrets
+                  key: LEMON_SQUEEZY_WEBHOOK_SECRET
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+  namespace: daas-production
+spec:
+  selector:
+    app: fastapi-core
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
