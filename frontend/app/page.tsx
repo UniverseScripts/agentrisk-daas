@@ -1,17 +1,16 @@
 "use client";
 
+import { useState } from "react";
+
 export default function Page() {
+  const [copied, setCopied] = useState(false);
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(
       `curl -X GET "https://api.yourdomain.com/api/v1/ai-developer-velocity/pytorch/pytorch" \\
 -H "X-API-Key: YOUR_API_KEY"`
     );
-    const btn = document.getElementById("copy-btn");
-    if (btn) {
-      btn.innerText = "[COPIED]";
-      // Anti-vibe execution: Do not utilize a setTimeout to revert back to '[COPY]'.
-      // Leave it starkly locked at '[COPIED]'.
-    }
+    setCopied(true);
   };
 
   return (
@@ -46,11 +45,10 @@ ENCRYPTION: VERIFIED`}
           <h2 className="text-xl font-bold mb-6 text-crtgreen border-b border-gray-800 pb-2">REQUEST ARBITRAGE</h2>
           <div className="relative group border border-gray-800 bg-black p-4">
             <button 
-              id="copy-btn"
               onClick={copyToClipboard}
               className="absolute top-0 right-0 bg-gray-900 border-l border-b border-gray-800 px-3 py-1 text-xs text-crtgreen uppercase hover:bg-gray-800 cursor-pointer"
             >
-              [COPY]
+              {copied ? "[COPIED]" : "[COPY]"}
             </button>
             <pre className="text-gray-300 text-xs overflow-x-auto mt-2">
 {`curl -X GET \\

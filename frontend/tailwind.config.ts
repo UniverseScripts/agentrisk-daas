@@ -6,6 +6,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        mono: ['var(--font-jetbrains-mono)', 'monospace'],
+        sans: ['var(--font-jetbrains-mono)', 'monospace'],
+      },
       colors: {
         trueblack: "#000000",
         sterilewhite: "#E5E7EB",
