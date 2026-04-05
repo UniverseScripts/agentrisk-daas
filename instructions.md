@@ -1,38 +1,37 @@
-# Antigravity Agent Directives: Phase 3 - Autonomous Financial Perimeter
+# Antigravity Agent Directives: Phase 4 - Enterprise Documentation Gateway
 
 ## 0. The Architectural Objective
-The Data-as-a-Service (DaaS) ingestion and routing pipelines are operational. You must now engineer the financial monetization bridge. You will implement a highly secure webhook receiver that mathematically links the Lemon Squeezy Merchant of Record (MoR) to the PostgreSQL `api_key` ledger, and configure the Kubernetes ingress routing to expose this perimeter to the global internet.
+The backend Data-as-a-Service (DaaS) pipeline is fully operational on an isolated edge node. You are tasked with engineering the B2B client conversion interface. This will be a strictly static Next.js frontend functioning as a technical documentation gateway. It must translate global traffic into Merchant of Record (MoR) checkout conversions.
 
-## 1. The Cryptographic Webhook Receiver (Application Layer)
-**Thesis:** Standard agents blindly trust incoming HTTP payloads, leading to API key generation forgery by malicious actors.
-**Anti-Thesis:** Relying purely on network-layer security (IP whitelisting) is insufficient for financial transactions on edge nodes.
-**Synthesis:** Enforce strict HMAC SHA-256 signature verification on the incoming payload before allocating any database resources.
+## 1. The Technology Stack Constraints
+**Thesis:** Modern frontends bloat with unnecessary client-side state and server-side rendering logic.
+**Anti-Thesis:** Complex frontends increase deployment costs and latency.
+**Synthesis:** Enforce absolute minimalism.
+* **Framework:** Next.js (App Router configured strictly for `output: 'export'` static HTML generation).
+* **Language:** TypeScript (Strict typing enforced).
+* **Styling:** Tailwind CSS. The aesthetic must be brutalist, terminal-inspired, and highly technical.
+* **State:** Zero global state management (No Redux, no Zustand).
 
-You must mutate `api/main.py` to include the following endpoint: `POST /webhooks/lemon-squeezy`.
-Execute the following strict logic:
-1. **Air-gapped Secret:** Extract `LEMON_SQUEEZY_WEBHOOK_SECRET` via `os.getenv()`. Fail violently if missing.
-2. **Signature Verification:** Extract the `X-Signature` HTTP header. Compute the HMAC SHA-256 digest of the raw request body using the air-gapped secret. You MUST use `hmac.compare_digest()` to prevent timing attacks. If the signature is forged, immediately raise `HTTP 401`.
-3. **Event Parsing:** Parse the JSON payload. Ensure the `meta.event_name` equals `order_created`.
-4. **Cryptographic Key Generation:** Generate a raw API key string (e.g., `daas_live_<uuid4>`). You MUST mathematically hash this raw string using SHA-256 before interacting with the database.
-5. **Ledger Injection:** Asynchronously insert a new `APIKey` record into the database. Set `valid_api_keys` to the hashed string, `token_balance` to `10000`, and `is_active` to `True`. 
-6. **Output Stub:** Print or log the raw API key and the client's email (extracted from `data.attributes.user_email`). Do not build a complex SMTP integration yet; leave a clear `# TODO: Async dispatch raw_api_key to client_email` marker.
+## 2. The Required Page Topology
+You will engineer a single, high-fidelity landing page (`app/page.tsx`) partitioned into three distinct conversion nodes:
 
-## 2. The Kubernetes Ingress Routing (Infrastructure Layer)
-**Thesis:** Hardcoding ports and relying on default NodePorts exposes the edge cluster to direct, unmitigated DDoS vectors.
-**Anti-Thesis:** Complex service meshes (Istio) will consume the remaining memory baseline of the consumer-grade hardware.
-**Synthesis:** Engineer a strict, lightweight Traefik IngressRoute utilizing your existing Cloudflare Tunnel perimeter.
+1. **The Value Proposition (Hero):**
+   * Communicate the arbitrage: "Institutional-Grade AI Developer Velocity API."
+   * Highlight the core metrics: Real-time tracking of top 50 AI repositories, contributor churn, and commit velocity.
 
-You must create a new file: `k8s/base/routing/daas-ingress.yaml`.
-Execute the following declarative infrastructure:
-1. Define a standard Kubernetes `Ingress` resource targeting the `traefik` ingress class.
-2. Map the host (e.g., `api.yourdomain.com`) strictly to the backend `fastapi-service` on port `8000`.
-3. You must explicitly define two paths:
-    * Path: `/api/v1/ai-developer-velocity` (Prefix match)
-    * Path: `/webhooks/lemon-squeezy` (Exact match)
+2. **The Integration Ledger (Documentation):**
+   * Provide brutalist, copy-pasteable code blocks for B2B developers.
+   * Display a `curl` request targeting `https://api.[yourdomain].com/api/v1/ai-developer-velocity/pytorch/pytorch` demonstrating the required `X-API-Key` header.
+   * Display a standard JSON response payload mapped from the `repository_metrics` PostgreSQL schema.
+
+3. **The Financial Gateway (Conversion):**
+   * A direct Call-to-Action (CTA) button labeled "Provision API Access."
+   * This button must contain a hardcoded `href` to the Lemon Squeezy checkout link. 
+   * **CRITICAL:** Do not build a custom checkout cart. The MoR handles all financial compliance off-site.
 
 ## 3. The Execution Protocol
-* **Do not** modify the existing Lua rate limiter or the `get_developer_velocity` endpoint.
-* **Do not** alter `db/models.py`. The `APIKey` schema is already absolute.
-* Ensure all database operations in the webhook remain fully asynchronous to prevent blocking the ASGI event loop during a surge of MoR transactions.
+1. Initialize the Next.js matrix utilizing standard deployment templates.
+2. Ensure the `next.config.js` explicitly defines `output: "export"` to guarantee the build produces a purely static `/out` directory.
+3. You are strictly forbidden from writing API routes (`app/api/...`) or attempting to connect to the PostgreSQL database from this codebase. All state is managed by the K3s edge node.
 
-Iteratively draft the `api/main.py` mutation and present it for human verification before drafting the Kubernetes YAML.
+Execute the generation of the UI components and await structural verification.

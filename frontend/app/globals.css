@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #000000;
+  color: #E5E7EB;
+}
+
+/* Custom Anti-Vibe Blinking Cursor */
+.blinking-cursor {
+  display: inline-block;
+  width: 0.6rem;
+  height: 1.25rem;
+  background-color: #00FF41;
+  animation: blink 1s step-end infinite;
+  margin-left: 4px;
+  vertical-align: text-bottom;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+* {
+  /* Enforce Absolute Brutalism. Eradicates any default or stray border rounding */
+  border-radius: 0 !important;
+}

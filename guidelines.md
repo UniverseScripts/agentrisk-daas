@@ -1,34 +1,34 @@
-# Agent Execution Directives: Operational & Legal Compliance
+# Agent Execution Directives: Static DaaS Documentation Gateway
 
 ## 0. The Prime Directive
-You are an autonomous execution agent operating within a strictly constrained, zero-budget edge environment. Your outputs must mathematically align with resource asceticism, enterprise-grade security, and strict legal compliance. Deviation from these parameters will result in immediate operational failure and potential legal liability. 
+You are engineering a B2B enterprise documentation gateway, not a consumer web application. Your sole objective is to mathematically translate inbound technical traffic into Merchant of Record (MoR) conversions. You will execute this with absolute dependency minimalism, enforcing a brutalist, zero-state static architecture. 
 
-## I. Legal & Terms of Service (ToS) Perimeter
-**Thesis:** Aggressive web scraping extracts maximum data but triggers automated legal and technical countermeasures.
-**Anti-Thesis:** Strictly abiding by rate limits ensures compliance but risks failing to aggregate enough data to provide B2B value.
-**Synthesis:** Utilize official, authenticated GraphQL endpoints to extract aggregated metadata while remaining mathematically invisible to abuse-detection algorithms.
+## I. Zero-State & Static Exclusivity
+**Thesis:** Modern React frameworks encourage dynamic server rendering and complex client-side state management.
+**Anti-Thesis:** Deploying a dynamic Node.js server to host a landing page violates the zero-compute infrastructure mandate and introduces unnecessary latency to global clients.
+**Synthesis:** Enforce strict Static Site Generation (SSG).
 
-1. **Zero-PII Mandate:** You are strictly forbidden from scraping, storing, or transmitting Personally Identifiable Information (PII), including developer email addresses, real names, or location data. You will only query aggregated repository metrics (commits, issues, forks, stars). Selling PII violates GDPR and CCPA and introduces catastrophic legal liability.
-2. **GraphQL Endpoint Exclusivity:** Do not write HTML parsers or use libraries like `BeautifulSoup` or `Selenium` against GitHub. You must exclusively use the official GitHub GraphQL API. 
-3. **Rate Limit Adherence:** The GitHub Actions ingestion script must programmatically check the `rateLimit` object in the GraphQL response. If the remaining quota drops below 10%, the script must gracefully terminate and log a warning, rather than spamming the endpoint and triggering a shadowban.
+1. **The Export Mandate:** The `next.config.js` must explicitly contain `output: 'export'`. You are strictly forbidden from utilizing Next.js API routes (`app/api/...`), middleware, or server actions.
+2. **State Eradication:** You will not install or utilize Redux, Zustand, Context API, or any global state managers. The page possesses no dynamic state. It is a static ledger of documentation and a routing gateway to the MoR.
+3. **Hydration Minimization:** Do not use `useEffect` or `useState` unless absolutely mathematically necessary for a minor UI toggle (e.g., copying a `curl` snippet to the clipboard). 
 
-## II. Silicon & Compute Conservation
-**Thesis:** Modern Python development relies on heavy, robust data-processing libraries.
-**Anti-Thesis:** Consumer edge silicon will thermally throttle and crash if heavy libraries are invoked during concurrent K3s operations.
-**Synthesis:** Enforce absolute dependency minimalism. 
+## II. The Brutalist Aesthetic (UI/UX)
+**Thesis:** Agents default to consumer-friendly, soft aesthetics with rounded corners and heavy animation libraries.
+**Anti-Thesis:** Quantitative analysts and senior engineers distrust "fluffy" consumer marketing. It signals a lack of technical rigor.
+**Synthesis:** Enforce a brutalist, terminal-inspired, data-dense aesthetic using exclusively Tailwind CSS.
 
-1. **Dependency Eradication:** You are strictly forbidden from importing `pandas`, `numpy`, `scipy`, `torch`, or any heavy data science library. The JSON parsing and normalizations must be executed using Python's standard library (`json`, `datetime`) and lightweight asynchronous request libraries (`httpx`).
-2. **Asynchronous Exclusivity:** All I/O operations (API requests, PostgreSQL queries) must be asynchronous. You will not write blocking `requests.get()` or synchronous `psycopg2` calls that halt the ASGI event loop.
+1. **Typography:** Utilize strict monospaced or highly geometric sans-serif fonts (e.g., Inter, JetBrains Mono, Roboto Mono). 
+2. **Color Palette:** High-contrast, mathematically sterile. Default to a dark-mode terminal aesthetic (slate/zinc/black backgrounds) with a single, highly visible accent color strictly reserved for the conversion CTA and code syntax highlighting.
+3. **No UI Bloatware:** You are strictly forbidden from installing heavy component libraries (Material UI, Chakra UI, Ant Design) or animation libraries (Framer Motion). Construct all components utilizing native HTML elements and utility classes.
 
-## III. Cryptographic & Ledger Security
-**Thesis:** Hardcoded configurations allow for rapid prototyping and seamless agent execution.
-**Anti-Thesis:** Hardcoded secrets pushed to a global Git ledger result in immediate credential harvesting by automated botnets.
-**Synthesis:** Air-gap all cryptographic keys and database URIs from the application logic.
+## III. The Financial Conversion Perimeter
+**Thesis:** Standard e-commerce templates assume a localized shopping cart and native payment processor integration.
+**Anti-Thesis:** Building a checkout flow on a static site requires complex, insecure client-side logic that breaks MoR compliance.
+**Synthesis:** Delegate all financial cryptography and compliance entirely to the off-site MoR portal.
 
-1. **The Air-Gapped Configuration:** You will never hardcode a PostgreSQL URI, a GitHub Personal Access Token (PAT), or a Merchant of Record (MoR) webhook secret. 
-2. **Environment Injection:** All credentials must be extracted exclusively via `os.getenv()`. You will assume these variables are securely injected into the K3s containers via Kubernetes `Secret` objects or defined in the GitHub Actions repository secrets.
-3. **Ledger Immutability:** When deducting tokens from the `api_key` table, you must execute the deduction atomically (e.g., `UPDATE api_key SET token_balance = token_balance - 1 WHERE id = X AND token_balance > 0`). Do not read the balance into Python memory, subtract, and write back, as this introduces race conditions under concurrent load.
+1. **The Air-Gapped Checkout:** The "Provision API Access" Call-to-Action (CTA) must be a standard HTML anchor tag (`<a>`) containing the hardcoded URL to the Lemon Squeezy hosted checkout page. 
+2. **No SDKs:** You will not install the `@lemonsqueezy/lemonsqueezy.js` library or any Stripe client-side SDKs. The frontend does not process transactions; it merely routes traffic.
 
-## IV. Architectural Idempotency
-1. **Idempotent Database Ingestion:** The GitHub Actions cron job will inevitably fail or retry. All `INSERT` operations into the PostgreSQL `repository_metrics` table must include `ON CONFLICT DO NOTHING` or `ON CONFLICT DO UPDATE` clauses to prevent duplicate primary keys and corrupted time-series visualizations in Grafana.
-2. **Read-Only Infrastructure:** You are authorized to write and modify Python application logic. You are strictly forbidden from modifying the existing `grafana.yaml`, `prometheus.yaml`, or core K3s orchestration manifests unless explicitly authorized by a human operator.
+## IV. B2B Documentation Rigor
+1. **Code Snippet Fidelity:** The `curl` integration examples must be technically flawless. They must explicitly demonstrate the `X-API-Key` header injection and the precise structure of the PostgreSQL JSON response payload.
+2. **The "Copy-to-Clipboard" Mandate:** Every code block must feature a zero-dependency, native JavaScript `navigator.clipboard.writeText()` implementation. Frictionless integration is the primary driver of B2B conversions.

@@ -26,3 +26,13 @@ venv.bak/
 
 #Custom
 github_velocity_test_output.json
+github_velocity_output.json
+
+# Frontend Matrix Dependencies
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/.swc
+frontend/npm-debug.log
+frontend/yarn-debug.log
+frontend/yarn-error.log
