@@ -8,7 +8,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         mono: ['var(--font-jetbrains-mono)', 'monospace'],
-        sans: ['var(--font-jetbrains-mono)', 'monospace'],
+        sans: ['var(--font-inter)', 'sans-serif'],
       },
       colors: {
         trueblack: "#000000",

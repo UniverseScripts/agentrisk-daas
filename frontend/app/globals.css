@@ -27,3 +27,28 @@ body {
   /* Enforce Absolute Brutalism. Eradicates any default or stray border rounding */
   border-radius: 0 !important;
 }
+
+/* Brutalist Interaction & Reveal Keyframes */
+@keyframes flash-invert {
+  0% { filter: invert(0); }
+  10% { filter: invert(1); background-color: #00FF41; color: #000; }
+  100% { filter: invert(0); }
+}
+
+.animate-flash {
+  animation: flash-invert 0.15s step-end forwards;
+}
+
+@keyframes stagger-reveal {
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-reveal {
+  opacity: 0;
+  animation: stagger-reveal 0ms step-end forwards;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
