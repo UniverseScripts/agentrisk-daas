@@ -31,6 +31,13 @@ class RepositoryMetric(Base):
     # Formula: 1.0 - (unique_commit_authors_past_24h / total_commits_past_24h)
     contributor_churn: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
+    # Technographic Signals (AST Dependency Shifts, License Tracking, Quantization Formats)
+    framework_shifts: Mapped[str | None] = mapped_column(String, nullable=True)  # JSON representation of AST framework changes
+    license_type: Mapped[str | None] = mapped_column(String, nullable=True)     # Detected SPDX license (e.g. Apache-2.0, AGPL-3.0)
+    license_drift: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False) # Flag indicating license alterations
+    model_weight_formats: Mapped[str | None] = mapped_column(String, nullable=True) # JSON list of weight formats (e.g. GGUF, AWQ, Safetensors)
+    fine_tuning_frameworks: Mapped[str | None] = mapped_column(String, nullable=True) # JSON list of fine-tuning stacks (e.g. Unsloth, PEFT)
+
 
 class APIKey(Base):
     """

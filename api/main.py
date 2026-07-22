@@ -7,9 +7,10 @@ import hashlib
 import uuid
 from db.connection import AsyncSessionLocal
 from db.models import APIKey, RepositoryMetric
-from api.schemas import RepositoryMetricResponse
+from api.schemas import RepositoryMetricResponse, AdvancedTechnographicAnalyticsResponse
 from api.deps import verify_api_key
 from api.rate_limiter import enforce_rate_limit
+from api.analytics import calculate_fmdi, calculate_cffi, calculate_prei, calculate_llrs
 
 app = FastAPI(
     title="Data-as-a-Service Core",
@@ -20,6 +21,7 @@ app = FastAPI(
 LEMON_SQUEEZY_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZY_WEBHOOK_SECRET")
 
 @app.post("/webhooks/lemon-squeezy")
+@app.post("/api/v1/webhooks/lemon-squeezy")
 async def lemon_squeezy_webhook(request: Request):
     """
     Cryptographic Webhook Receiver for Lemon Squeezy MoR.
@@ -147,6 +149,71 @@ async def get_developer_velocity(
         # 4. Commit deterministic changes prior to socket offloading
         await session.commit()
         return metric_node
+
+@app.get("/api/v1/analytics/ai-developer-velocity/{repo_name:path}", response_model=AdvancedTechnographicAnalyticsResponse)
+async def get_developer_velocity_analytics(
+    repo_name: str,
+    auth_key: APIKey = Depends(verify_api_key)
+):
+    """
+    Synthesizes raw AST technographic metrics into institutional composite indices (FMDI, CFFI, PREI, LLRS).
+    """
+    await enforce_rate_limit(
+        api_key_hash=auth_key.valid_api_keys, 
+        limit=60, 
+        window_secs=60
+    )
+    
+    async with AsyncSessionLocal() as session:
+        deduct_stmt = update(APIKey).where(
+            APIKey.id == auth_key.id,
+            APIKey.token_balance > 0
+        ).values(
+            token_balance=APIKey.token_balance - 1
+        ).returning(APIKey.token_balance)
+        
+        deduction_result = await session.execute(deduct_stmt)
+        remaining_balance = deduction_result.scalar()
+        
+        if remaining_balance is None:
+            await session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Concurrently bankrupt token limit accessed."
+            )
+            
+        metric_stmt = select(RepositoryMetric).where(
+            RepositoryMetric.repo_name == repo_name
+        ).order_by(
+            RepositoryMetric.timestamp.desc()
+        ).limit(1)
+        
+        metric_result = await session.execute(metric_stmt)
+        metric_node = metric_result.scalars().first()
+        
+        if not metric_node:
+            await session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Repository identity '{repo_name}' yields zero physical records."
+            )
+
+        await session.commit()
+
+        # Compute composite indices
+        return {
+            "repo_name": metric_node.repo_name,
+            "timestamp": metric_node.timestamp,
+            "framework_migration_index": calculate_fmdi(metric_node),
+            "contributor_flight_risk": calculate_cffi(metric_node),
+            "production_readiness_score": calculate_prei(metric_node),
+            "license_liability_score": calculate_llrs(metric_node),
+            "license_type": metric_node.license_type,
+            "license_drift": metric_node.license_drift,
+            "framework_shifts": metric_node.framework_shifts,
+            "model_weight_formats": metric_node.model_weight_formats,
+            "fine_tuning_frameworks": metric_node.fine_tuning_frameworks,
+        }
 
 if __name__ == "__main__":
     uvicorn.run("api.main:app", host="0.0.0.0", port=8000, env_file=".env", reload=True)

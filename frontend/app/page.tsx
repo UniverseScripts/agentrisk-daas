@@ -70,7 +70,12 @@ ENCRYPTION: VERIFIED`}
   "open_issues_delta": -5,
   "fork_velocity_24h": 38,
   "contributor_churn": 0.824,
-  "timestamp": "2026-04-05T00:00:00Z"
+  "framework_shifts": "[\"pytorch -> triton\", \"vllm_integration\"]",
+  "license_type": "Apache-2.0",
+  "license_drift": false,
+  "model_weight_formats": "[\"GGUF\", \"AWQ\", \"Safetensors\"]",
+  "fine_tuning_frameworks": "[\"Unsloth\", \"PEFT\"]",
+  "timestamp": "2026-07-22T00:00:00Z"
 }`}
           </pre>
         </div>

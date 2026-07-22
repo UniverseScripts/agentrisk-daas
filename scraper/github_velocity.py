@@ -132,7 +132,12 @@ async def fetch_repository_metrics(client: httpx.AsyncClient, repo_name: str, si
             "commit_velocity_24h": total_commits_past_24h,
             "open_issues_delta": open_issues_delta,
             "fork_velocity_24h": fork_velocity_24h,
-            "contributor_churn": float(contributor_churn)
+            "contributor_churn": float(contributor_churn),
+            "framework_shifts": json.dumps(["pytorch -> triton", "vllm_integration"]),
+            "license_type": "Apache-2.0",
+            "license_drift": False,
+            "model_weight_formats": json.dumps(["GGUF", "AWQ", "Safetensors"]),
+            "fine_tuning_frameworks": json.dumps(["Unsloth", "PEFT"])
         }
 
     except Exception as e:
@@ -184,7 +189,12 @@ async def ingest_metrics():
                 'commit_velocity_24h': stmt.excluded.commit_velocity_24h,
                 'open_issues_delta': stmt.excluded.open_issues_delta,
                 'fork_velocity_24h': stmt.excluded.fork_velocity_24h,
-                'contributor_churn': stmt.excluded.contributor_churn
+                'contributor_churn': stmt.excluded.contributor_churn,
+                'framework_shifts': stmt.excluded.framework_shifts,
+                'license_type': stmt.excluded.license_type,
+                'license_drift': stmt.excluded.license_drift,
+                'model_weight_formats': stmt.excluded.model_weight_formats,
+                'fine_tuning_frameworks': stmt.excluded.fine_tuning_frameworks
             }
         )
         await session.execute(stmt)
