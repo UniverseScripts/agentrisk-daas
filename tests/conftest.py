@@ -1,8 +1,14 @@
 import os
+import sys
+
+# Add the project root to sys.path so that we can import from db, api, etc.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://mock"
 os.environ["REDIS_URL"] = "redis://mock"
 os.environ["LEMON_SQUEEZY_WEBHOOK_SECRET"] = "mock_secret"
-
+os.environ["RESEND_API_KEY"] = "mock_resend_key"
+os.environ["LEMON_SQUEEZY_VARIANT_ID"] = "mock_variant_id"
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -36,6 +42,8 @@ def patch_environment(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://mock")
     monkeypatch.setenv("REDIS_URL", "redis://mock")
     monkeypatch.setenv("LEMON_SQUEEZY_WEBHOOK_SECRET", "mock_secret")
+    monkeypatch.setenv("RESEND_API_KEY", "mock_resend_key")
+    monkeypatch.setenv("LEMON_SQUEEZY_VARIANT_ID", "mock_variant_id")
 
 @pytest.fixture(autouse=True)
 def patch_db_session(monkeypatch, async_session):
@@ -60,7 +68,7 @@ async def valid_api_key(async_session):
     import hashlib
     raw_key = "test_api_key"
     hashed_key = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
-    api_key = APIKey(valid_api_keys=hashed_key, token_balance=100)
+    api_key = APIKey(valid_api_keys=hashed_key, subscription_id="sub_test", is_active=True)
     async_session.add(api_key)
     await async_session.commit()
     return raw_key, api_key

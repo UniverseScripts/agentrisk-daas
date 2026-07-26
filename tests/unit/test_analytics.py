@@ -1,42 +1,69 @@
 import pytest
-from db.models import RepositoryMetric
-from api.analytics import calculate_fmdi, calculate_cffi, calculate_prei, calculate_llrs
+from db.models import PackageRiskMetric
+from api.analytics import calculate_mci, calculate_dri, calculate_asi
 
-def test_analytics_fmdi_calculation():
-    metric = RepositoryMetric(
-        repo_name="pytorch/pytorch",
-        commit_velocity_24h=100,
-        contributor_churn=0.2,
-        framework_shifts='["pytorch -> triton"]'
-    )
-    fmdi = calculate_fmdi(metric)
-    assert isinstance(fmdi, float)
-    assert fmdi > 0
-
-def test_analytics_cffi_calculation():
-    metric = RepositoryMetric(
-        repo_name="pytorch/pytorch",
-        commit_velocity_24h=50,
-        open_issues_delta=15,
+def test_analytics_mci_calculation():
+    metric = PackageRiskMetric(
+        package_name="npm/react",
+        maintainer_count=1,
         contributor_churn=0.8
     )
-    cffi = calculate_cffi(metric)
-    assert isinstance(cffi, float)
-    assert 0.0 <= cffi <= 10.0
+    mci = calculate_mci(metric)
+    assert isinstance(mci, float)
+    assert mci == 10.0
 
-def test_analytics_prei_calculation():
-    metric = RepositoryMetric(
-        repo_name="pytorch/pytorch",
-        model_weight_formats='["GGUF", "AWQ", "Safetensors"]',
-        fine_tuning_frameworks='["Unsloth", "PEFT"]'
+def test_analytics_mci_insufficient_data():
+    metric = PackageRiskMetric(
+        package_name="npm/react",
+        maintainer_count=None,
+        contributor_churn=0.8
     )
-    prei = calculate_prei(metric)
-    assert isinstance(prei, float)
-    assert prei >= 7.0
+    mci = calculate_mci(metric)
+    assert mci == "insufficient data"
 
-def test_analytics_llrs_calculation():
-    metric_safe = RepositoryMetric(license_type="Apache-2.0", license_drift=False)
-    assert calculate_llrs(metric_safe) == 1.5
+def test_analytics_dri_calculation():
+    metric = PackageRiskMetric(
+        package_name="npm/react",
+        days_since_last_publish=630,
+        publish_cadence_variance=1.5
+    )
+    dri = calculate_dri(metric)
+    assert isinstance(dri, float)
+    assert dri == 10.0
 
-    metric_risky = RepositoryMetric(license_type="AGPL-3.0", license_drift=True)
-    assert calculate_llrs(metric_risky) == 10.0
+def test_analytics_dri_insufficient_data():
+    metric = PackageRiskMetric(
+        package_name="npm/react",
+        days_since_last_publish=None,
+        publish_cadence_variance=1.5
+    )
+    dri = calculate_dri(metric)
+    assert dri == "insufficient data"
+
+def test_dri_insufficient_data_on_single_publish():
+    metric = PackageRiskMetric(
+        package_name="npm/react",
+        days_since_last_publish=10,
+        publish_cadence_variance=None
+    )
+    dri = calculate_dri(metric)
+    assert dri == "insufficient data"
+
+def test_analytics_asi_calculation():
+    metric = PackageRiskMetric(
+        package_name="npm/react",
+        fork_spike_ratio=3.5,
+        open_issues_delta=10
+    )
+    asi = calculate_asi(metric)
+    assert isinstance(asi, float)
+    assert asi == 8.0
+
+def test_analytics_asi_insufficient_data():
+    metric = PackageRiskMetric(
+        package_name="npm/react",
+        fork_spike_ratio=None,
+        open_issues_delta=10
+    )
+    asi = calculate_asi(metric)
+    assert asi == "insufficient data"

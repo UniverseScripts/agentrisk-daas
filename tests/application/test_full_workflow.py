@@ -1,6 +1,6 @@
 import pytest
 from scraper.github_velocity import ingest_metrics
-from db.models import RepositoryMetric
+from db.models import PackageRiskMetric
 from sqlalchemy import select
 
 @pytest.mark.asyncio
@@ -12,41 +12,46 @@ async def test_application_workflow(async_session, monkeypatch, async_client, va
     
     raw_key, api_key_model = valid_api_key
 
-    # Mock the fetch_repository_metrics to return a static payload
-    async def mock_fetch(*args, **kwargs):
+    # Mock the fetch_*_metrics to return static payloads
+    async def mock_fetch_github(*args, **kwargs):
         return {
             "rate_limited": False,
-            "repo_name": "pytorch/pytorch",
             "commit_velocity_24h": 142,
             "open_issues_delta": -5,
             "fork_velocity_24h": 38,
-            "contributor_churn": 0.824,
-            "framework_shifts": '["pytorch -> triton"]',
-            "license_type": "Apache-2.0",
-            "license_drift": False,
-            "model_weight_formats": '["GGUF", "AWQ"]',
-            "fine_tuning_frameworks": '["Unsloth", "PEFT"]'
+            "contributor_churn": 0.824
+        }
+        
+    async def mock_fetch_npm(*args, **kwargs):
+        return {
+            "maintainer_count": 5,
+            "days_since_last_publish": 10,
+            "publish_cadence_variance": 2.5
         }
     
-    monkeypatch.setattr("scraper.github_velocity.fetch_repository_metrics", mock_fetch)
+    monkeypatch.setattr("scraper.github_velocity.fetch_github_metrics", mock_fetch_github)
+    monkeypatch.setattr("scraper.github_velocity.fetch_npm_metrics", mock_fetch_npm)
     monkeypatch.setenv("GITHUB_TOKEN", "mock_token")
-    monkeypatch.setattr("scraper.github_velocity.TARGET_REPOSITORIES", ["pytorch/pytorch"])
+    async def mock_discover(*args, **kwargs):
+        return [{"name": "react", "ecosystem": "npm", "github": "facebook/react"}]
+        
+    monkeypatch.setattr("scraper.github_velocity.discover_target_packages", mock_discover)
     
     # 1. Run Scraper
     await ingest_metrics()
     
     # 2. Verify Database
-    stmt = select(RepositoryMetric).where(RepositoryMetric.repo_name == "pytorch/pytorch")
+    stmt = select(PackageRiskMetric).where(PackageRiskMetric.package_name == "npm/react")
     result = await async_session.execute(stmt)
     metric = result.scalars().first()
     assert metric is not None
-    assert metric.license_type == "Apache-2.0"
+    assert metric.maintainer_count == 5
     
     # 3. Client retrieves data
     response = await async_client.get(
-        "/api/v1/ai-developer-velocity/pytorch/pytorch",
+        "/api/v1/package-risk/npm/react",
         headers={"X-API-Key": raw_key}
     )
     assert response.status_code == 200
     assert response.json()["commit_velocity_24h"] == 142
-    assert response.json()["license_type"] == "Apache-2.0"
+    assert response.json()["maintainer_count"] == 5
