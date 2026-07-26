@@ -28,10 +28,4 @@ async def verify_api_key(x_api_key: str = Header(...)):
                 detail="Invalid or inactive API Key verification"
             )
             
-        if api_key_record.token_balance <= 0:
-            raise HTTPException(
-                status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                detail="Zero compute tokens remaining on ledger."
-            )
-            
         return api_key_record

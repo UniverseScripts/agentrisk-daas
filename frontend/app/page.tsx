@@ -8,8 +8,7 @@ export default function Page() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(
-      `curl -X GET "https://api.yourdomain.com/api/v1/ai-developer-velocity/pytorch/pytorch" \\
--H "X-API-Key: YOUR_API_KEY"`
+      `curl -X GET "https://api.yourdomain.com/api/v1/analytics/package-risk/npm/react" \\\n-H "X-API-Key: YOUR_API_KEY"`
     );
     setCopied(true);
     setFlash(true);
@@ -33,12 +32,13 @@ NODE: EDGE INFRASTRUCTURE DAAS
 ENCRYPTION: VERIFIED`}
         </pre>
         <h1 className="text-2xl md:text-4xl font-black mb-4">
-          Institutional-Grade AI Developer Velocity API
+          Maintainer & Dormancy Risk Signal DaaS
           <span className="blinking-cursor"></span>
         </h1>
         <p className="text-zinc-400 max-w-2xl leading-relaxed mt-6 lowercase normal-case tracking-normal text-base">
-          Real-time execution telemetry mapping the top 50 artificial intelligence repositories.
-          Strict tracking of contributor churn, fork velocity, and temporal commits. No marketing. No UI bloat. Only raw data matrix.
+          Maintainer concentration, dormancy/reactivation signal, anomalous activity flag.
+          Sourced directly from public registry metadata across the AI agent supply chain (MCP, npm, PyPI).
+          No CVEs, no static code analysis. Just the raw risk matrix.
         </p>
       </section>
 
@@ -55,7 +55,7 @@ ENCRYPTION: VERIFIED`}
             </button>
             <pre className="text-zinc-300 text-xs overflow-x-auto mt-2 font-mono">
 {`curl -X GET \\
-"https://api.yourdomain.com/api/v1/ai-developer-velocity/pytorch/pytorch" \\
+"https://api.yourdomain.com/api/v1/analytics/package-risk/npm/react" \\
 -H "X-API-Key: YOUR_API_KEY"`}
             </pre>
           </div>
@@ -65,17 +65,16 @@ ENCRYPTION: VERIFIED`}
           <h2 className="text-xl font-bold mb-6 text-zinc-500 border-b border-zinc-900 pb-2">RESPONSE PAYLOAD</h2>
           <pre className="border border-zinc-900 bg-black p-4 text-xs overflow-x-auto text-zinc-400 font-mono flex-1">
 {`{
-  "repo_name": "pytorch/pytorch",
-  "commit_velocity_24h": 142,
-  "open_issues_delta": -5,
-  "fork_velocity_24h": 38,
-  "contributor_churn": 0.824,
-  "framework_shifts": "[\"pytorch -> triton\", \"vllm_integration\"]",
-  "license_type": "Apache-2.0",
-  "license_drift": false,
-  "model_weight_formats": "[\"GGUF\", \"AWQ\", \"Safetensors\"]",
-  "fine_tuning_frameworks": "[\"Unsloth\", \"PEFT\"]",
-  "timestamp": "2026-07-22T00:00:00Z"
+  "package_name": "npm/react",
+  "timestamp": "2026-07-22T00:00:00Z",
+  "maintainer_concentration_index": 10.0,
+  "dormancy_reactivation_index": "insufficient data",
+  "anomalous_spike_index": 8.0,
+  "maintainer_count": 1,
+  "single_maintainer_flag": true,
+  "days_since_last_publish": 2,
+  "publish_cadence_variance": null,
+  "fork_spike_ratio": 3.5
 }`}
           </pre>
         </div>
@@ -86,8 +85,8 @@ ENCRYPTION: VERIFIED`}
         <h2 className="text-xl font-bold text-zinc-500 mb-8 border-b border-zinc-900 pb-2">SECURE PERIMETER ACCESS</h2>
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-6">
           <div className="border border-zinc-900 p-6 flex-1 bg-zinc-950">
-            <p className="text-zinc-500 text-xs mb-2 font-mono tracking-widest">ALLOCATION: 10,000 API CALLS</p>
-            <p className="text-3xl font-black text-sterilewhite font-mono tracking-tighter">$499.00 USD</p>
+            <p className="text-zinc-500 text-xs mb-2 font-mono tracking-widest">RECURRING SUBSCRIPTION</p>
+            <p className="text-3xl font-black text-sterilewhite font-mono tracking-tighter">$15.00 / MO</p>
           </div>
           <a
             href="https://[your-store].lemonsqueezy.com/checkout/buy/00000000-0000-0000-0000-000000000000"
@@ -98,7 +97,7 @@ ENCRYPTION: VERIFIED`}
         </div>
         <p className="text-xs text-zinc-600 mt-8 max-w-2xl font-mono">
           WARNING: ALL TRANSACTIONS ARE PROCESSED VIA LEMON SQUEEZY MERCHANT OF RECORD. 
-          CRYPTOGRAPHIC TOKENS ARE DISPATCHED VIA EMAIL POST-AUTHENTICATION. ALL SALES FINAL.
+          CRYPTOGRAPHIC TOKENS ARE DISPATCHED VIA EMAIL POST-AUTHENTICATION. CANCEL ANYTIME.
         </p>
       </section>
 

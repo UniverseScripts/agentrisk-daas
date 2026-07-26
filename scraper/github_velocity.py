@@ -3,39 +3,80 @@ import asyncio
 import httpx
 from datetime import datetime, timedelta, timezone
 import json
+import statistics
 
 from db.connection import AsyncSessionLocal
 from sqlalchemy.dialects.postgresql import insert
-import db.models
-
-# Hardcoded, deterministic Target Repository Matrix (Top 50 AI/ML)
-TARGET_REPOSITORIES = [
-    "pytorch/pytorch", "huggingface/transformers", "meta-llama/llama3",
-    "langchain-ai/langchain", "openai/openai-python", "milvus-io/milvus",
-    "qdrant/qdrant", "vllm-project/vllm", "microsoft/DeepSpeed",
-    "ggerganov/llama.cpp", "ollama/ollama", "dmlc/xgboost",
-    "microsoft/LightGBM", "scikit-learn/scikit-learn", "keras-team/keras",
-    "tensorflow/tensorflow", "google-research/google-research", "huggingface/diffusers",
-    "CompVis/stable-diffusion", "stability-ai/stablediffusion", "runwayml/stable-diffusion",
-    "AUTOMATIC1111/stable-diffusion-webui", "awslabs/gluon-ts", "lk-geimfari/awesomedata",
-    "facebookresearch/faiss", "ray-project/ray", "huggingface/peft",
-    "huggingface/accelerate", "rwightman/pytorch-image-models", "OpenPipe/OpenPipe",
-    "unslothai/unsloth", "sgl-project/sglang", "lmsysorg/fschat",
-    "baichuan-inc/Baichuan2", "QwenLM/Qwen", "THUDM/ChatGLM-6B",
-    "THUDM/ChatGLM2-6B", "01-ai/Yi", "mistralai/mistral-src",
-    "bclavie/RAGatouille", "deepset-ai/haystack", "run-llama/llama_index",
-    "weaviate/weaviate", "chroma-core/chroma", "lancedb/lancedb",
-    "openai/whisper", "m-bain/whisperx", "comfyanonymous/ComfyUI",
-    "lllyasviel/ControlNet", "lllyasviel/Fooocus"
-]
+from db.models import PackageRiskMetric
 
 GRAPHQL_URL = "https://api.github.com/graphql"
 
-async def fetch_repository_metrics(client: httpx.AsyncClient, repo_name: str, since_dt: datetime) -> dict | None:
-    owner, name = repo_name.split("/")
+def calculate_variance(timestamps):
+    if len(timestamps) < 2:
+        return None
+    timestamps = sorted(timestamps)
+    gaps = [(timestamps[i] - timestamps[i-1]).total_seconds() / 86400.0 for i in range(1, len(timestamps))]
+    if len(gaps) < 2:
+        return 0.0
+    return statistics.variance(gaps)
+
+async def discover_target_packages(client: httpx.AsyncClient) -> list[dict]:
+    """
+    Dynamically discover MCP packages from NPM registry.
+    """
+    targets = []
+    
+    # 1. Fetch dynamic NPM MCP packages
+    try:
+        response = await client.get("https://registry.npmjs.org/-/v1/search?text=mcp&size=10")
+        if response.status_code == 200:
+            data = response.json()
+            for obj in data.get("objects", []):
+                pkg = obj.get("package", {})
+                name = pkg.get("name")
+                links = pkg.get("links", {})
+                repo_url = links.get("repository", "")
+                
+                # Extract github owner/repo from URL
+                if "github.com/" in repo_url:
+                    parts = repo_url.split("github.com/")[-1].split("/")
+                    if len(parts) >= 2:
+                        owner = parts[0]
+                        repo = parts[1].replace(".git", "")
+                        targets.append({
+                            "name": name,
+                            "ecosystem": "npm",
+                            "github": f"{owner}/{repo}"
+                        })
+    except Exception as e:
+        print(f"WARNING: Dynamic npm discovery failed: {e}")
+        
+    # Fallback/Pilot list for PyPI since PyPI lacks simple REST keyword search
+    pypi_pilots = [
+        {"name": "langchain", "ecosystem": "pypi", "github": "langchain-ai/langchain"},
+        {"name": "openai", "ecosystem": "pypi", "github": "openai/openai-python"},
+        {"name": "vllm", "ecosystem": "pypi", "github": "vllm-project/vllm"}
+    ]
+    
+    # Deduplicate and merge
+    seen = set()
+    final_targets = []
+    for t in targets + pypi_pilots:
+        key = f"{t['ecosystem']}/{t['name']}"
+        if key not in seen:
+            seen.add(key)
+            final_targets.append(t)
+            
+    return final_targets
+
+async def fetch_github_metrics(client: httpx.AsyncClient, github_repo: str, since_dt: datetime) -> dict | None:
+    if not github_repo:
+        return None
+        
+    owner, name = github_repo.split("/")
     since_iso = since_dt.isoformat()
-    issue_closed_query = f"repo:{repo_name} is:issue closed:>={since_iso}"
-    issue_opened_query = f"repo:{repo_name} is:issue created:>={since_iso}"
+    issue_closed_query = f"repo:{github_repo} is:issue closed:>={since_iso}"
+    issue_opened_query = f"repo:{github_repo} is:issue created:>={since_iso}"
 
     query = """
     query ($owner: String!, $name: String!, $since: GitTimestamp!, $issueClosedQuery: String!, $issueOpenedQuery: String!) {
@@ -87,7 +128,6 @@ async def fetch_repository_metrics(client: httpx.AsyncClient, repo_name: str, si
         response.raise_for_status()
         data = response.json()
         
-        # Rate limit perimeter mapping
         rate_limit = data.get("data", {}).get("rateLimit", {}).get("remaining", 5000)
         if rate_limit < 500:
             print(f"WARNING: Rate limit extremely low ({rate_limit}). Approaching shadowban margin.")
@@ -98,7 +138,6 @@ async def fetch_repository_metrics(client: httpx.AsyncClient, repo_name: str, si
         if not repo_data or not repo_data.get("defaultBranchRef"):
              return None
 
-        # Commits & Authors
         history = repo_data["defaultBranchRef"]["target"]["history"]
         total_commits_past_24h = history["totalCount"]
         
@@ -111,38 +150,124 @@ async def fetch_repository_metrics(client: httpx.AsyncClient, repo_name: str, si
         
         unique_commit_authors_past_24h = len(unique_authors)
 
-        # Churn Formula
         if total_commits_past_24h == 0:
             contributor_churn = 0.0
         else:
             contributor_churn = 1.0 - (unique_commit_authors_past_24h / total_commits_past_24h)
 
-        # Forks Delta 24h
         forks_data = repo_data.get("forks", {}).get("nodes", [])
+        now_dt = datetime.now(timezone.utc)
+        thirty_days_ago = now_dt - timedelta(days=30)
+        
         fork_velocity_24h = sum(1 for f in forks_data if datetime.fromisoformat(f["createdAt"].replace('Z', '+00:00')) >= since_dt)
+        
+        # Calculate fork spike ratio based on up to 100 recent forks
+        forks_30d = sum(1 for f in forks_data if datetime.fromisoformat(f["createdAt"].replace('Z', '+00:00')) >= thirty_days_ago)
+        daily_avg = forks_30d / 30.0
+        
+        fork_spike_ratio = None
+        if daily_avg > 0:
+            fork_spike_ratio = fork_velocity_24h / daily_avg
+        elif fork_velocity_24h > 0:
+            fork_spike_ratio = float(fork_velocity_24h) # Infinite ratio effectively
 
-        # Issues Delta (Opened - Closed)
         closed_issues = data.get("data", {}).get("closedIssues", {}).get("issueCount", 0)
         opened_issues = data.get("data", {}).get("openedIssues", {}).get("issueCount", 0)
         open_issues_delta = opened_issues - closed_issues
 
         return {
             "rate_limited": False,
-            "repo_name": repo_name,
             "commit_velocity_24h": total_commits_past_24h,
             "open_issues_delta": open_issues_delta,
             "fork_velocity_24h": fork_velocity_24h,
             "contributor_churn": float(contributor_churn),
-            "framework_shifts": json.dumps(["pytorch -> triton", "vllm_integration"]),
-            "license_type": "Apache-2.0",
-            "license_drift": False,
-            "model_weight_formats": json.dumps(["GGUF", "AWQ", "Safetensors"]),
-            "fine_tuning_frameworks": json.dumps(["Unsloth", "PEFT"])
+            "fork_spike_ratio": fork_spike_ratio
         }
-
     except Exception as e:
-        print(f"Failed to fetch {repo_name}: {e}")
+        print(f"Failed to fetch {github_repo}: {e}")
         return None
+
+async def fetch_npm_metrics(client: httpx.AsyncClient, package_name: str) -> dict:
+    try:
+        response = await client.get(f"https://registry.npmjs.org/{package_name}")
+        if response.status_code != 200:
+            return {}
+        data = response.json()
+        
+        maintainers = data.get("maintainers", [])
+        maintainer_count = len(maintainers) if maintainers else 1
+        
+        time_data = data.get("time", {})
+        release_times = []
+        for version, t_str in time_data.items():
+            if version not in ("modified", "created"):
+                try:
+                    dt = datetime.fromisoformat(t_str.replace('Z', '+00:00'))
+                    release_times.append(dt)
+                except ValueError:
+                    pass
+                    
+        days_since_last_publish = None
+        publish_cadence_variance = None
+        
+        if release_times:
+            release_times.sort()
+            latest = release_times[-1]
+            days_since_last_publish = (datetime.now(timezone.utc) - latest).days
+            
+            twelve_months_ago = datetime.now(timezone.utc) - timedelta(days=365)
+            recent_releases = [rt for rt in release_times if rt >= twelve_months_ago]
+            publish_cadence_variance = calculate_variance(recent_releases)
+            
+        return {
+            "maintainer_count": maintainer_count,
+            "days_since_last_publish": days_since_last_publish,
+            "publish_cadence_variance": publish_cadence_variance,
+        }
+    except Exception as e:
+        print(f"Failed to fetch NPM metrics for {package_name}: {e}")
+        return {}
+
+async def fetch_pypi_metrics(client: httpx.AsyncClient, package_name: str) -> dict:
+    try:
+        response = await client.get(f"https://pypi.org/pypi/{package_name}/json")
+        if response.status_code != 200:
+            return {}
+        data = response.json()
+        
+        releases = data.get("releases", {})
+        release_times = []
+        for version, release_list in releases.items():
+            for r in release_list:
+                t_str = r.get("upload_time_iso_8601")
+                if t_str:
+                    try:
+                        dt = datetime.fromisoformat(t_str.replace('Z', '+00:00'))
+                        release_times.append(dt)
+                    except ValueError:
+                        pass
+        
+        days_since_last_publish = None
+        publish_cadence_variance = None
+        
+        if release_times:
+            release_times.sort()
+            latest = release_times[-1]
+            days_since_last_publish = (datetime.now(timezone.utc) - latest).days
+            
+            twelve_months_ago = datetime.now(timezone.utc) - timedelta(days=365)
+            recent_releases = [rt for rt in release_times if rt >= twelve_months_ago]
+            publish_cadence_variance = calculate_variance(recent_releases)
+            
+        return {
+            # EXPLICIT CAVEAT: PyPI does not expose valid maintainers.
+            "maintainer_count": None,
+            "days_since_last_publish": days_since_last_publish,
+            "publish_cadence_variance": publish_cadence_variance,
+        }
+    except Exception as e:
+        print(f"Failed to fetch PyPI metrics for {package_name}: {e}")
+        return {}
 
 async def ingest_metrics():
     github_token = os.getenv("GITHUB_TOKEN")
@@ -160,46 +285,69 @@ async def ingest_metrics():
     metrics_payload = []
     
     async with httpx.AsyncClient(headers=headers, timeout=20.0) as client:
-        for repo_name in TARGET_REPOSITORIES:
-            result = await fetch_repository_metrics(client, repo_name, since_dt)
-            if not result:
+        targets = await discover_target_packages(client)
+        
+        for pkg in targets:
+            pkg_name = pkg["name"]
+            ecosystem = pkg["ecosystem"]
+            github_repo = pkg["github"]
+            
+            gh_result = await fetch_github_metrics(client, github_repo, since_dt)
+            if not gh_result:
                 continue
-            if result.get("rate_limited"):
+            if gh_result.get("rate_limited"):
                 print("ABORTING: GitHub Rate limit depleted. Saving current payload...")
                 break
+            gh_result.pop("rate_limited")
             
-            result.pop("rate_limited")
-            result["timestamp"] = datetime.now(timezone.utc)
-            metrics_payload.append(result)
+            reg_result = {}
+            if ecosystem == "npm":
+                reg_result = await fetch_npm_metrics(client, pkg_name)
+            elif ecosystem == "pypi":
+                reg_result = await fetch_pypi_metrics(client, pkg_name)
+                
+            maintainer_count = reg_result.get("maintainer_count")
             
-            # Artificial sleep to reduce burst and lower ban probability 
+            payload = {
+                "package_name": f"{ecosystem}/{pkg_name}",
+                "timestamp": datetime.now(timezone.utc),
+                "commit_velocity_24h": gh_result.get("commit_velocity_24h", 0),
+                "open_issues_delta": gh_result.get("open_issues_delta", 0),
+                "fork_velocity_24h": gh_result.get("fork_velocity_24h", 0),
+                "contributor_churn": gh_result.get("contributor_churn", 0.0),
+                "maintainer_count": maintainer_count,
+                "single_maintainer_flag": maintainer_count is not None and maintainer_count <= 1,
+                "days_since_last_publish": reg_result.get("days_since_last_publish"),
+                "publish_cadence_variance": reg_result.get("publish_cadence_variance"),
+                "fork_spike_ratio": gh_result.get("fork_spike_ratio")
+            }
+            
+            metrics_payload.append(payload)
             await asyncio.sleep(0.1)
 
     if not metrics_payload:
         print("No metrics extracted. Exiting.")
         return
 
-    # Asynchronous Database Ingestion (Idempotent Upsert)
     async with AsyncSessionLocal() as session:
-        # Utilize PostgreSQL ON CONFLICT DO UPDATE clause
-        stmt = insert(db.models.RepositoryMetric).values(metrics_payload)
+        stmt = insert(PackageRiskMetric).values(metrics_payload)
         stmt = stmt.on_conflict_do_update(
-            index_elements=['repo_name', 'timestamp'],
+            index_elements=['package_name', 'timestamp'],
             set_={
                 'commit_velocity_24h': stmt.excluded.commit_velocity_24h,
                 'open_issues_delta': stmt.excluded.open_issues_delta,
                 'fork_velocity_24h': stmt.excluded.fork_velocity_24h,
                 'contributor_churn': stmt.excluded.contributor_churn,
-                'framework_shifts': stmt.excluded.framework_shifts,
-                'license_type': stmt.excluded.license_type,
-                'license_drift': stmt.excluded.license_drift,
-                'model_weight_formats': stmt.excluded.model_weight_formats,
-                'fine_tuning_frameworks': stmt.excluded.fine_tuning_frameworks
+                'maintainer_count': stmt.excluded.maintainer_count,
+                'single_maintainer_flag': stmt.excluded.single_maintainer_flag,
+                'days_since_last_publish': stmt.excluded.days_since_last_publish,
+                'publish_cadence_variance': stmt.excluded.publish_cadence_variance,
+                'fork_spike_ratio': stmt.excluded.fork_spike_ratio
             }
         )
         await session.execute(stmt)
         await session.commit()
-    print(f"Successfully ingested {len(metrics_payload)} records into repository_metrics ledger.")
+    print(f"Successfully ingested {len(metrics_payload)} records into package_risk_metrics ledger.")
 
 if __name__ == "__main__":
     asyncio.run(ingest_metrics())
