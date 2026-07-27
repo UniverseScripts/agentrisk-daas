@@ -89,7 +89,7 @@ ENCRYPTION: VERIFIED`}
             <p className="text-3xl font-black text-sterilewhite font-mono tracking-tighter">$15.00 / MO</p>
           </div>
           <a
-            href="https://[your-store].lemonsqueezy.com/checkout/buy/00000000-0000-0000-0000-000000000000"
+            href="https://asteriostech07.lemonsqueezy.com/checkout/buy/a3dc2366-b80f-4c18-920b-2f608b7a063e"
             className="flex-1 border border-crtgreen bg-transparent text-crtgreen px-8 py-8 text-center text-lg font-black hover:bg-crtgreen hover:text-black uppercase tracking-widest block transition-none"
           >
             PROVISION API ACCESS
