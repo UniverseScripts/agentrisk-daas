@@ -13,12 +13,12 @@ class Settings(BaseSettings):
     Centralized, typed Pydantic Settings configuration manager.
     Parses and strictly validates environment variables from host environment or .env file.
     """
-    DATABASE_URL: str
-    REDIS_URL: str
-    GITHUB_TOKEN: str
-    RESEND_API_KEY: str
-    LEMON_SQUEEZY_WEBHOOK_SECRET: str
-    LEMON_SQUEEZY_VARIANT_ID: str
+    DATABASE_URL: str = ""
+    REDIS_URL: str = ""
+    GITHUB_TOKEN: str = ""
+    RESEND_API_KEY: str = ""
+    LEMON_SQUEEZY_WEBHOOK_SECRET: str = ""
+    LEMON_SQUEEZY_VARIANT_ID: str = ""
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(project_root, ".env"),
