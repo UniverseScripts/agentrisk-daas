@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     LEMON_SQUEEZY_WEBHOOK_SECRET: str = ""
     LEMON_SQUEEZY_VARIANT_ID: str = ""
+    CACHE_TTL_HOURS: int = 6
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(project_root, ".env") if os.path.exists(os.path.join(project_root, ".env")) else None,

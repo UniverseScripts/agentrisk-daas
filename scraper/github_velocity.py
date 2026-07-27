@@ -26,49 +26,53 @@ def calculate_variance(timestamps):
 
 async def discover_target_packages(client: httpx.AsyncClient) -> list[dict]:
     """
-    Dynamically discover MCP packages from NPM registry.
+    Dynamically discover AI agent/MCP packages from NPM registry across multiple search terms.
+    Deduplicates by resolved GitHub repository to handle monorepos gracefully.
     """
     targets = []
+    queries = ["mcp", "agent", "llm", "claude", "anthropic", "openai-agent"]
     
-    # 1. Fetch dynamic NPM MCP packages
-    try:
-        response = await client.get("https://registry.npmjs.org/-/v1/search?text=mcp&size=10")
-        if response.status_code == 200:
-            data = response.json()
-            for obj in data.get("objects", []):
-                pkg = obj.get("package", {})
-                name = pkg.get("name")
-                links = pkg.get("links", {})
-                repo_url = links.get("repository", "")
-                
-                # Extract github owner/repo from URL
-                if "github.com/" in repo_url:
-                    parts = repo_url.split("github.com/")[-1].split("/")
-                    if len(parts) >= 2:
-                        owner = parts[0]
-                        repo = parts[1].replace(".git", "")
-                        targets.append({
-                            "name": name,
-                            "ecosystem": "npm",
-                            "github": f"{owner}/{repo}"
-                        })
-    except Exception as e:
-        print(f"WARNING: Dynamic npm discovery failed: {e}")
+    for q in queries:
+        try:
+            response = await client.get(f"https://registry.npmjs.org/-/v1/search?text={q}&size=250")
+            if response.status_code == 200:
+                data = response.json()
+                for obj in data.get("objects", []):
+                    pkg = obj.get("package", {})
+                    name = pkg.get("name")
+                    links = pkg.get("links", {})
+                    repo_url = links.get("repository", "")
+                    
+                    if "github.com/" in repo_url:
+                        parts = repo_url.split("github.com/")[-1].split("/")
+                        if len(parts) >= 2:
+                            owner = parts[0]
+                            repo = parts[1].replace(".git", "").strip("/")
+                            targets.append({
+                                "name": name,
+                                "ecosystem": "npm",
+                                "github": f"{owner}/{repo}"
+                            })
+        except Exception as e:
+            print(f"WARNING: Dynamic npm discovery failed for query '{q}': {e}")
         
-    # Fallback/Pilot list for PyPI since PyPI lacks simple REST keyword search
     pypi_pilots = [
         {"name": "langchain", "ecosystem": "pypi", "github": "langchain-ai/langchain"},
         {"name": "openai", "ecosystem": "pypi", "github": "openai/openai-python"},
         {"name": "vllm", "ecosystem": "pypi", "github": "vllm-project/vllm"}
     ]
     
-    # Deduplicate and merge
-    seen = set()
+    # Deduplicate by resolved GitHub repo & package key
+    seen_repos = set()
+    seen_keys = set()
     final_targets = []
+    
     for t in targets + pypi_pilots:
         key = f"{t['ecosystem']}/{t['name']}"
-        if key not in seen:
-            seen.add(key)
+        repo_key = t["github"].lower()
+        if key not in seen_keys and repo_key not in seen_repos:
+            seen_keys.add(key)
+            seen_repos.add(repo_key)
             final_targets.append(t)
             
     return final_targets
