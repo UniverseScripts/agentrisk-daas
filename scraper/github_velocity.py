@@ -1,9 +1,13 @@
 import os
+import sys
 import asyncio
 import httpx
 from datetime import datetime, timedelta, timezone
 import json
 import statistics
+
+# Ensure project root is in sys.path for standalone script execution
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from db.connection import AsyncSessionLocal
 from sqlalchemy.dialects.postgresql import insert
@@ -269,8 +273,10 @@ async def fetch_pypi_metrics(client: httpx.AsyncClient, package_name: str) -> di
         print(f"Failed to fetch PyPI metrics for {package_name}: {e}")
         return {}
 
+from core.config import settings
+
 async def ingest_metrics():
-    github_token = os.getenv("GITHUB_TOKEN")
+    github_token = settings.GITHUB_TOKEN
     if not github_token:
         print("CRITICAL: GITHUB_TOKEN environment variable missing.")
         return

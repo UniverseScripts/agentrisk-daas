@@ -13,18 +13,13 @@ from api.deps import verify_api_key
 from api.rate_limiter import enforce_rate_limit
 from api.analytics import calculate_mci, calculate_dri, calculate_asi
 
+from core.config import settings
+
 app = FastAPI(
     title="Data-as-a-Service Core",
     description="Maintainer & Dormancy Risk Signal DaaS",
     version="2.0"
 )
-
-LEMON_SQUEEZY_WEBHOOK_SECRET = os.getenv("LEMON_SQUEEZY_WEBHOOK_SECRET")
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-LEMON_SQUEEZY_VARIANT_ID = os.getenv("LEMON_SQUEEZY_VARIANT_ID")
-
-if not RESEND_API_KEY:
-    raise RuntimeError("CRITICAL: RESEND_API_KEY environment variable missing")
 
 @app.post("/webhooks/lemon-squeezy")
 @app.post("/api/v1/webhooks/lemon-squeezy")
@@ -33,7 +28,7 @@ async def lemon_squeezy_webhook(request: Request):
     Cryptographic Webhook Receiver for Lemon Squeezy MoR.
     Strictly verifies HMAC signatures to allocate API tokens securely.
     """
-    if not LEMON_SQUEEZY_WEBHOOK_SECRET:
+    if not settings.LEMON_SQUEEZY_WEBHOOK_SECRET:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="CRITICAL: LEMON_SQUEEZY_WEBHOOK_SECRET environment variable missing"
@@ -46,7 +41,7 @@ async def lemon_squeezy_webhook(request: Request):
     raw_body = await request.body()
     
     digest = hmac.new(
-        LEMON_SQUEEZY_WEBHOOK_SECRET.encode("utf-8"), 
+        settings.LEMON_SQUEEZY_WEBHOOK_SECRET.encode("utf-8"), 
         raw_body, 
         hashlib.sha256
     ).hexdigest()
@@ -79,7 +74,7 @@ async def lemon_squeezy_webhook(request: Request):
 
     if event_name == "subscription_created":
         # TODO: Fail closed in production when LEMON_SQUEEZY_VARIANT_ID is definitively set.
-        if LEMON_SQUEEZY_VARIANT_ID and str(variant_id) != str(LEMON_SQUEEZY_VARIANT_ID):
+        if settings.LEMON_SQUEEZY_VARIANT_ID and str(variant_id) != str(settings.LEMON_SQUEEZY_VARIANT_ID):
             return {"status": "Ignored - different product variant"}
 
         raw_api_key = f"daas_live_{uuid.uuid4().hex}"
@@ -99,7 +94,7 @@ async def lemon_squeezy_webhook(request: Request):
                 res = await client.post(
                     "https://api.resend.com/emails",
                     headers={
-                        "Authorization": f"Bearer {RESEND_API_KEY}",
+                        "Authorization": f"Bearer {settings.RESEND_API_KEY}",
                         "Content-Type": "application/json"
                     },
                     json={

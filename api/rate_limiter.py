@@ -1,15 +1,10 @@
-import os
 import time
 from fastapi import HTTPException, status
 import redis.asyncio as redis
+from core.config import settings
 
-# Air-gapped Redis configuration
-# Assign default to bypass failure during initial code load if undefined, but fail explicitly on connections.
-REDIS_URL = os.getenv("REDIS_URL")
-if not REDIS_URL:
-    raise ValueError("Critical Security Violation: REDIS_URL environment variable missing.")
-
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+# Air-gapped Redis configuration via Pydantic Settings
+redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 # Engineered Asynchronous Lua Script (Sliding Window Algorithm using Sorted Sets)
 SLIDING_WINDOW_LUA = """
