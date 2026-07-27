@@ -1,6 +1,5 @@
 import os
 import sys
-from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Ensure project root is in sys.path when imported across modules/scripts
@@ -11,7 +10,9 @@ if project_root not in sys.path:
 class Settings(BaseSettings):
     """
     Centralized, typed Pydantic Settings configuration manager.
-    Parses and strictly validates environment variables from host environment or .env file.
+    Parses environment variables dynamically from environment or .env file.
+    Default empty string fallbacks allow isolated script runs while application
+    startup logic enforces strict fail-fast validation.
     """
     DATABASE_URL: str = ""
     REDIS_URL: str = ""
@@ -21,13 +22,18 @@ class Settings(BaseSettings):
     LEMON_SQUEEZY_VARIANT_ID: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=os.path.join(project_root, ".env"),
+        env_file=os.path.join(project_root, ".env") if os.path.exists(os.path.join(project_root, ".env")) else None,
         env_file_encoding="utf-8",
         extra="ignore"
     )
 
-@lru_cache()
 def get_settings() -> Settings:
+    """Returns a fresh Settings instance dynamically reflecting live environment."""
     return Settings()
 
-settings = get_settings()
+class SettingsProxy:
+    """Dynamic proxy delegating attribute access to fresh get_settings() calls to support monkeypatching."""
+    def __getattr__(self, name: str):
+        return getattr(get_settings(), name)
+
+settings = SettingsProxy()

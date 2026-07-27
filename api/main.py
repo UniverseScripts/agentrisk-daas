@@ -15,6 +15,14 @@ from api.analytics import calculate_mci, calculate_dri, calculate_asi
 
 from core.config import settings
 
+# Enforce strict fail-fast perimeter checks on application boot
+if not settings.RESEND_API_KEY:
+    raise RuntimeError("CRITICAL: RESEND_API_KEY environment variable missing")
+if not settings.DATABASE_URL:
+    raise RuntimeError("CRITICAL: DATABASE_URL environment variable missing")
+if not settings.REDIS_URL:
+    raise RuntimeError("CRITICAL: REDIS_URL environment variable missing")
+
 app = FastAPI(
     title="Data-as-a-Service Core",
     description="Maintainer & Dormancy Risk Signal DaaS",
