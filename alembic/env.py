@@ -18,6 +18,9 @@ if config.config_file_name is not None:
 
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Inject architecture root into Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

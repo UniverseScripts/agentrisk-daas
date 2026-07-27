@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: daas-risk-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: LEMON_SQUEEZY_WEBHOOK_SECRET
+        sync: false
+      - key: LEMON_SQUEEZY_VARIANT_ID
+        sync: false
