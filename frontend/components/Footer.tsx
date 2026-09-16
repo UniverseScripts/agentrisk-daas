@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="flex items-center gap-3 whitespace-nowrap overflow-hidden text-ellipsis">
             <span className="h-2.5 w-2.5 rounded-full bg-crtgreen animate-pulse flex-shrink-0"></span>
             <p className="text-crtgreen font-bold text-xs sm:text-sm md:text-base tracking-wider whitespace-nowrap">
-              AGENTRISK DAAS // INSTITUTIONAL TELEMETRY ENGINE
+              AGENTRISK DAAS // RISK SIGNAL API
             </p>
           </div>
           <div className="flex items-center gap-4 sm:gap-6 text-zinc-400 text-[11px] font-mono whitespace-nowrap flex-shrink-0">

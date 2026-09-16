@@ -20,7 +20,7 @@ export default function PoliciesPage() {
           <p className="text-crtgreen text-xs font-mono mb-2">[GOVERNANCE MANUAL // DATA TRANSPARENCY]</p>
           <h1 className="text-3xl lg:text-4xl font-black mb-4">PRIVACY, SECURITY &amp; DATA USAGE GOVERNANCE</h1>
           <p className="text-zinc-400 max-w-3xl leading-relaxed mt-4 lowercase normal-case tracking-normal text-base font-sans">
-            Institutional standards governing public registry telemetry collection, zero-synthetic-data guarantees, data retention windows, and subscriber confidentiality.
+            Standards governing public registry telemetry collection, zero-synthetic-data guarantees, data retention windows, and subscriber confidentiality.
           </p>
         </div>
       </section>

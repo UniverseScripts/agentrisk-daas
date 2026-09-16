@@ -63,7 +63,7 @@ axios.get(\`https://agentrisk-daas.onrender.com/api/v1/analytics/package-risk/\$
           <p className="text-crtgreen text-xs font-mono mb-2">[SYSTEM INTERFACE // V3.0 CATALOG-WIDE]</p>
           <h1 className="text-3xl lg:text-4xl font-black mb-4">API ENDPOINT DIRECTORY &amp; INTEGRATION GUIDE</h1>
           <p className="text-zinc-400 max-w-3xl leading-relaxed mt-4 lowercase normal-case tracking-normal text-base font-sans">
-            The AgentRisk Data-as-a-Service API delivers institutional maintainer concentration (MCI), dormancy/reactivation (DRI), anomalous spike activity (ASI), and typosquatting detection across npm and PyPI ecosystems.
+            The AgentRisk Data-as-a-Service API delivers maintainer concentration (MCI), dormancy/reactivation (DRI), anomalous spike activity (ASI), and typosquatting detection across npm and PyPI ecosystems.
           </p>
         </div>
       </section>
@@ -160,7 +160,7 @@ axios.get(\`https://agentrisk-daas.onrender.com/api/v1/analytics/package-risk/\$
                 <span className="text-crtgreen text-xs font-bold">COMPOSITE RISK INDICES</span>
               </div>
               <p className="text-zinc-400 text-sm lowercase normal-case tracking-normal font-sans mb-4">
-                Synthesizes raw telemetry into institutional composite risk indices: Maintainer Concentration Index (MCI), Dormancy Reactivation Index (DRI), and Anomalous Spike Index (ASI).
+                Synthesizes raw telemetry into composite risk indices: Maintainer Concentration Index (MCI), Dormancy Reactivation Index (DRI), and Anomalous Spike Index (ASI).
               </p>
             </div>
 

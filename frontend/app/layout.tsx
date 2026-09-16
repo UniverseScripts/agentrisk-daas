@@ -14,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AgentRisk DaaS | Institutional Risk Telemetry",
+  title: "AgentRisk DaaS | Maintainer & Dormancy Risk Signal API",
   description: "Maintainer concentration, dormancy reactivation, and typosquatting telemetry for AI agent supply chains.",
 };
 

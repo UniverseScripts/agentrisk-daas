@@ -375,7 +375,7 @@ async def get_package_risk_analytics(
     auth_key: APIKey = Depends(verify_api_key)
 ):
     """
-    Synthesizes raw metrics into institutional composite indices (MCI, DRI, ASI).
+    Synthesizes raw metrics into composite indices (MCI, DRI, ASI).
     Executes lazy on-demand fetch with 5s backpressure on cache misses.
     """
     await enforce_rate_limit(api_key_hash=auth_key.valid_api_keys, limit=60, window_secs=60)

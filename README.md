@@ -6,13 +6,12 @@
 [![Redis](https://img.shields.io/badge/Redis-Upstash_Sliding_Window-DC382D?style=flat-square&logo=redis)](https://upstash.com/)
 [![Vercel](https://img.shields.io/badge/Frontend-Vercel_Edge-000000?style=flat-square&logo=vercel)](https://agentrisk-daas-asteriostech-projects.vercel.app/)
 
-> **Institutional-Grade Data-as-a-Service (DaaS) engine providing maintainer-concentration and dormancy-reactivation risk telemetry across the AI agent supply chain (Model Context Protocol / MCP servers, npm, and PyPI packages).**
+> **Data-as-a-Service (DaaS) engine providing maintainer-concentration and dormancy-reactivation risk telemetry across the AI agent supply chain (Model Context Protocol / MCP servers, npm, and PyPI packages).**
 
 ---
 
 ## 📌 Problem & Value Proposition
 
-- **71% Single-Maintainer Risk**: Over 70% of audited Model Context Protocol (MCP) packages rely on a single maintainer, creating severe bus-factor and account-takeover liabilities.
 - **Dormancy Reactivation Threat**: Attackers routinely acquire dormant packages with high download volume and release malicious updates post-dormancy.
 - **Honest Telemetry Scope**: Every field returned by AgentRisk DaaS traces directly to public registry metadata (`registry.npmjs.org`, `pypi.org`) and GitHub API telemetry. Zero fabricated metrics, zero static code stubs.
 
@@ -27,7 +26,7 @@
 
 ## 📊 Composite Risk Indices
 
-AgentRisk DaaS synthesizes raw temporal signals into three institutional composite indices:
+AgentRisk DaaS synthesizes raw temporal signals into three composite indices:
 
 | Index | Name | Formula / Derivation | Fallback Behavior |
 | :--- | :--- | :--- | :--- |
@@ -112,4 +111,4 @@ PYTHONPATH=. pytest
 ```
 The suite also runs on every push and pull request via `.github/workflows/test.yaml`. It needs no secrets — `tests/conftest.py` supplies every required environment variable and no live service is contacted.
 
-*Current Coverage*: **30/30 tests passing.**
+[![Test Suite](https://github.com/UniverseScripts/agentrisk-daas/actions/workflows/test.yaml/badge.svg)](https://github.com/UniverseScripts/agentrisk-daas/actions/workflows/test.yaml)
