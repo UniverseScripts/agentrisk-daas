@@ -91,6 +91,7 @@ jobs:
 # Note that GitHub cron is always UTC and ignores the repository's timezone.
 #
 # GitHub also disables scheduled workflows in a repository with no commit activity
-# for 60 days, and emails the owner when it does. If the service starts going cold
-# again for no obvious reason, check that first.
+# for 60 days. workflow-keepalive.yaml re-enables this one and schedule.yaml weekly
+# to prevent that. If the service starts going cold again for no obvious reason,
+# check that workflow's runs first.
 # ---------------------------------------------------------------------------
