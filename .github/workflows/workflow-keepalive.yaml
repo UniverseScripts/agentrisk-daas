@@ -1,0 +1,57 @@
+name: Workflow-Keepalive
+
+# GitHub disables scheduled workflows in a public repository after 60 days with no
+# repository activity. This project can easily go 60 days without a commit, and when
+# that happens both Keep-Warm and the 6-hourly ingestion stop silently.
+#
+# HOW THIS PREVENTS IT:
+#   Once a week it calls the "enable workflow" REST endpoint
+#   (PUT /repos/{owner}/{repo}/actions/workflows/{id}/enable) on every scheduled
+#   workflow, including this one. Re-enabling resets the inactivity timer without a
+#   commit. That is the same thing the "Continue running workflow" button in GitHub's
+#   warning email does, and the approach gautamkrishnar/keepalive-workflow v2 uses in
+#   its API mode. GitHub does not document the reset as a guarantee, so if it ever
+#   stops working, the warning email is the signal to look here.
+#
+# WHY NOT A DUMMY COMMIT:
+#   main is protected (PR-only), and every push to main redeploys Vercel and Render.
+#
+# WHY WEEKLY:
+#   The window is 60 days. Weekly gives about eight chances to succeed before it
+#   lapses, even if GitHub drops some scheduled runs.
+
+on:
+    schedule:
+        - cron: '17 3 * * 1'    # Mondays 03:17 UTC, off the top of the hour
+    workflow_dispatch:
+
+concurrency:
+    group: workflow-keepalive
+    cancel-in-progress: false
+
+permissions:
+    actions: write    # needed for the enable endpoint; nothing else
+
+jobs:
+    reenable:
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Re-enable scheduled workflows
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  REPO: ${{ github.repository }}
+                  # Every workflow with a `schedule:` trigger, plus this file itself.
+                  # Add new scheduled workflows here.
+                  WORKFLOWS: keepalive.yaml schedule.yaml workflow-keepalive.yaml
+              run: |
+                  set -euo pipefail
+                  for wf in $WORKFLOWS; do
+                    gh api --method PUT "repos/$REPO/actions/workflows/$wf/enable"
+                    state="$(gh api "repos/$REPO/actions/workflows/$wf" --jq .state)"
+                    echo "$wf: $state"
+                    if [ "$state" != "active" ]; then
+                      echo "::error::$wf is '$state' after re-enable."
+                      exit 1
+                    fi
+                  done
